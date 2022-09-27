@@ -69,5 +69,5 @@ class ActionModule(ConfigNormalizerBaseMerger):
 
     @property
     def my_ansvar(self):
-        return 'smabot_get_az_secrets_args'
+        return 'smabot_azure_get_keyvault_secrets_args'
 
