@@ -1,0 +1,83 @@
+---
+
+  ##
+  ## note that this role currently uses a module on the remote system
+  ## to access azure meaning it also installs a lot of py modules to
+  ## the target which might only be needed here, not really sure yet
+  ## if this is the best thing to do
+  ##
+  ## the seemingly proper alternative would be to create a custom
+  ## ansible container image with all needed extras for the ansible
+  ## controller and use the controller to interact with azure, but
+  ## then we would need to manage that again somewhere
+  ##
+
+  ##
+  ## smabot_azure_get_keyvault_secrets_args:
+  ##   get_secrets:       # mandatory
+  ##     secrets:         # mandatory
+  ##       <secret-key>:  # mandatory
+  ##         config:      # direct module passtrhough args, optional
+  ##           name:      # optional, defaults to secret-key
+  ##     defaults:        # merged into options for all specific secrets, optional
+  ##       config:        # direct module passtrhough args, optional
+  ##         vault_uri:   # vault to use, mandatory
+  ##
+  ## authing: there are various auth schemes supported by az modules,
+  ##   see docu online, this role in principle does not favor or
+  ##   exclude any of them but was practically used / tested only
+  ##   with these so far: mod params
+  ##
+
+  - smabot.azure.normalize_get_az_secrets_args:
+    register: _tmp_az_secrets_config
+
+  - set_fact:
+      get_az_secrets_args_normed: "{{ _tmp_az_secrets_config.normalized }}"
+
+
+  ## TODO: use special venv for azure stuff???
+
+  - name: create local temp file for requirements file
+    ansible.builtin.tempfile:
+      state: file
+    register: _tmp_tmpfile
+    changed_when: false
+
+  - name: download requirements file to target
+    ansible.builtin.get_url:
+      url: https://raw.githubusercontent.com/ansible-collections/azure/dev/requirements-azure.txt
+      dest: "{{ _tmp_tmpfile.path }}"
+    changed_when: false
+
+
+  - name: install necessary python packages
+    ansible.builtin.pip:
+      requirements: "{{ _tmp_tmpfile.path }}"
+
+    ##
+    ## note: well, it seems that at least at the moment the reqfile
+    ##   is incomplete, so we need to add some extra modules here for now
+    ##
+  - name: install additional necessary python packages
+    ansible.builtin.pip:
+      name:
+        - azure-storage==0.35.1
+      state: present
+
+
+  - name: remove local requirements temp file
+    ansible.builtin.file:
+      path: "{{ _tmp_tmpfile.path }}"
+      state: absent
+    changed_when: false
+
+
+  - set_fact:
+      get_az_secrets_result: {}
+
+  - ansible.builtin.include_tasks: read_secret.yml
+    loop: "{{ get_az_secrets_args_normed.get_secrets.secrets | dict2items }}"
+    loop_control:
+      loop_var: _iter_az_secrets
+
