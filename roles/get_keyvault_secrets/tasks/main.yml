@@ -34,50 +34,12 @@
 
   - set_fact:
       get_az_secrets_args_normed: "{{ _tmp_az_secrets_config.normalized }}"
+      _tmp_my_tasks_file: "{{ role_path }}/tasks/venv_tasks.yml"
 
 
-  ## TODO: use special venv for azure stuff???
-
-  - name: create local temp file for requirements file
-    ansible.builtin.tempfile:
-      state: file
-    register: _tmp_tmpfile
-    changed_when: false
-
-  - name: download requirements file to target
-    ansible.builtin.get_url:
-      url: https://raw.githubusercontent.com/ansible-collections/azure/dev/requirements-azure.txt
-      dest: "{{ _tmp_tmpfile.path }}"
-    changed_when: false
-
-
-  - name: install necessary python packages
-    ansible.builtin.pip:
-      requirements: "{{ _tmp_tmpfile.path }}"
-
-    ##
-    ## note: well, it seems that at least at the moment the reqfile
-    ##   is incomplete, so we need to add some extra modules here for now
-    ##
-  - name: install additional necessary python packages
-    ansible.builtin.pip:
-      name:
-        - azure-storage==0.35.1
-      state: present
-
-
-  - name: remove local requirements temp file
-    ansible.builtin.file:
-      path: "{{ _tmp_tmpfile.path }}"
-      state: absent
-    changed_when: false
-
-
-  - set_fact:
-      get_az_secrets_result: {}
-
-  - ansible.builtin.include_tasks: read_secret.yml
-    loop: "{{ get_az_secrets_args_normed.get_secrets.secrets | dict2items }}"
-    loop_control:
-      loop_var: _iter_az_secrets
+  - ansible.builtin.include_role:
+      name: smabot.base.run_inside_venv
+    vars:
+      smabot_base_run_inside_venv_cfg:
+        tasks: "{{ _tmp_my_tasks_file }}"
 

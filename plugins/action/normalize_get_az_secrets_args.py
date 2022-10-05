@@ -2,6 +2,7 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+import os
 
 from ansible.errors import AnsibleOptionsError
 from ansible.plugins.filter.core import to_bool
@@ -26,6 +27,12 @@ class GetAZSecretsNormalizer(NormalizerBase):
           'hide_secrets', DefaultSetterConstant(True)
         )
 
+        self._add_defaultsetter(kwargs,
+          'requirements_srcpath', DefaultSetterConstant(
+              'ansible_collections/azure/azcollection/requirements-azure.txt'
+          )
+        )
+
         subnorms = kwargs.setdefault('sub_normalizers', [])
         subnorms += [
           NormSecret(pluginref),
@@ -33,6 +40,19 @@ class GetAZSecretsNormalizer(NormalizerBase):
 
         super(GetAZSecretsNormalizer, self).__init__(pluginref, *args, **kwargs)
 
+    def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
+        setdefault_none(my_subcfg, 'collections_basepath',
+          os.environ.get('ANSIBLE_COLLECTION_DIR', './collections') # on default use cwd
+        )
+
+        reqsrc = my_subcfg['requirements_srcpath']
+
+        if not os.path.isabs(reqsrc):
+            my_subcfg['requirements_srcpath'] = os.path.join(
+              my_subcfg['collections_basepath'], reqsrc
+            )
+
+        return my_subcfg
 
 
 class NormSecret(NormalizerBase):
