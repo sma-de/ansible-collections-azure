@@ -22,6 +22,10 @@ from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ans
 class GetAZSecretsNormalizer(NormalizerBase):
 
     def __init__(self, pluginref, *args, **kwargs):
+        self._add_defaultsetter(kwargs,
+          'hide_secrets', DefaultSetterConstant(True)
+        )
+
         subnorms = kwargs.setdefault('sub_normalizers', [])
         subnorms += [
           NormSecret(pluginref),
@@ -34,7 +38,7 @@ class GetAZSecretsNormalizer(NormalizerBase):
 class NormSecret(NormalizerBase):
 
     def __init__(self, pluginref, *args, **kwargs):
-        self._add_defaultsetter(kwargs, 
+        self._add_defaultsetter(kwargs,
           'only_value', DefaultSetterConstant(False)
         )
 
