@@ -14,7 +14,7 @@
     ## version from repo
   - name: move requirements file to target
     ansible.builtin.copy:
-      src: "{{ get_az_secrets_args_normed.requirements_srcpath }}"
+      src: "{{ smabot_az_secrets_args_normed.requirements_srcpath }}"
       dest: "{{ _tmp_tmpfile.path }}"
     changed_when: false
 
@@ -37,7 +37,15 @@
       get_az_secrets_result: {}
 
   - ansible.builtin.include_tasks: read_secret.yml
-    loop: "{{ get_az_secrets_args_normed.get_secrets.secrets | dict2items }}"
+    loop: "{{ smabot_az_secrets_args_normed.get_secrets.secrets | dict2items }}"
+    loop_control:
+      loop_var: _iter_az_secrets
+
+
+################### <writing secrets> ######################
+#
+  - ansible.builtin.include_tasks: write_secret.yml
+    loop: "{{ smabot_az_secrets_args_normed.set_secrets.secrets | dict2items }}"
     loop_control:
       loop_var: _iter_az_secrets
 

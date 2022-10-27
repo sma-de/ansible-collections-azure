@@ -13,8 +13,9 @@
   ##
 
   ##
-  ## smabot_azure_get_keyvault_secrets_args:
-  ##   get_secrets:       # mandatory
+  ## smabot_azure_keyvault_secrets_args:
+  ##   set_secrets:       # optional
+  ##   get_secrets:       # optional
   ##     secrets:         # mandatory
   ##       <secret-key>:  # mandatory
   ##         config:      # direct module passtrhough args, optional
@@ -29,12 +30,14 @@
   ##   with these so far: mod params
   ##
 
-  - smabot.azure.normalize_get_az_secrets_args:
+  - smabot.azure.normalize_az_secrets_args:
     register: _tmp_az_secrets_config
+    no_log: true
 
   - set_fact:
-      get_az_secrets_args_normed: "{{ _tmp_az_secrets_config.normalized }}"
+      smabot_az_secrets_args_normed: "{{ _tmp_az_secrets_config.normalized }}"
       _tmp_my_tasks_file: "{{ role_path }}/tasks/venv_tasks.yml"
+    no_log: true
 
 
   - ansible.builtin.include_role:
