@@ -8,6 +8,7 @@ ANSIBLE_METADATA = {
 
 
 import collections
+import copy
 
 from ansible.errors import AnsibleFilterError, AnsibleOptionsError
 from ansible.module_utils.six import string_types
@@ -51,16 +52,40 @@ class AppendAZSecrets(FilterBase):
 
         new_secrets = self.get_taskparam('new_secrets')
         secrets_cfg = self.get_taskparam('secrets_cfg')
+        read_all = secrets_cfg['read_all']
+        ret_secrets = secrets_cfg['return_secrets']
 
         for ns in new_secrets:
             # getting the secret name from azure module return structure
             # is surprisingly complicated (no direct field for this)
             sname = ns['sid'].split('/')
-            sname = sname[-2]
+
+            if read_all:
+                sname = sname[-1]
+            else:
+                sname = sname[-2]
+
             ns['name'] = sname
 
-            if secrets_cfg.get('only_value', False):
-                ns = ns['secret']
+            if read_all and ret_secrets:
+                ## prepare for recursion down to read all secrets one by one
+                tmp = copy.deepcopy(secrets_cfg)
+                tmp.update(ns)
+
+                ns = tmp
+
+                ns['config']['name'] = ns['name']
+                ns['read_all'] = False
+
+            else:
+
+                if secrets_cfg.get('only_value', False):
+                    if read_all:
+                        ## when all secrets are read at once,
+                        ## the actual secrets are nt provided by upstream api
+                        ns = None
+                    else:
+                        ns = ns['secret']
 
             tmp = value.setdefault('secrets', {})
             tmp[sname] = ns

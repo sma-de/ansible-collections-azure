@@ -46,3 +46,6 @@
       smabot_base_run_inside_venv_cfg:
         tasks: "{{ _tmp_my_tasks_file }}"
 
+##  - debug:
+##      var: smabot_azure_read_secrets
+

@@ -11,7 +11,8 @@ from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normali
   ConfigNormalizerBaseMerger,\
   NormalizerBase,\
   NormalizerNamed,\
-  DefaultSetterConstant
+  DefaultSetterConstant,\
+  SIMPLEKEY_IGNORE_VAL
 
 from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normalizing.proxy import ConfigNormerProxy
 from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import get_subdict, setdefault_none, SUBDICT_METAKEY_ANY
@@ -36,7 +37,7 @@ class AZSecretsNormalizer(NormalizerBase):
 
         subnorms = kwargs.setdefault('sub_normalizers', [])
         subnorms += [
-          NormGetAllSecrets(pluginref),
+          NormGetSecrets(pluginref),
           NormSetAllSecrets(pluginref),
         ]
 
@@ -57,6 +58,36 @@ class AZSecretsNormalizer(NormalizerBase):
         return my_subcfg
 
 
+class NormGetSecrets(NormalizerBase):
+
+    def __init__(self, pluginref, *args, **kwargs):
+        subnorms = kwargs.setdefault('sub_normalizers', [])
+        subnorms += [
+          NormGetAllSecrets(pluginref),
+        ]
+
+        super(NormGetSecrets, self).__init__(pluginref, *args, **kwargs)
+
+
+    @property
+    def config_path(self):
+        return ['get_secrets']
+
+    def _handle_specifics_postsub(self, cfg, my_subcfg, cfgpath_abs):
+        readall = my_subcfg.get('all', None)
+
+        if readall:
+            tmp = my_subcfg['secrets']
+            ansible_assert(not tmp,
+               "Either explicitly list some secrets by name, or use"\
+               " the all key to read all secrets, never combine these two"
+            )
+
+            tmp['___all___'] = readall
+
+        return my_subcfg
+
+
 class NormGetAllSecrets(NormalizerBase):
 
     def __init__(self, pluginref, *args, **kwargs):
@@ -67,17 +98,26 @@ class NormGetAllSecrets(NormalizerBase):
 
         super(NormGetAllSecrets, self).__init__(pluginref, *args, **kwargs)
 
-
     @property
     def config_path(self):
-        return ['get_secrets', 'secrets']
+        return ['secrets']
 
 
 class NormSecretGetInst(NormalizerNamed):
 
+    MAGIC_READALL_KEY = '___ALL___'
+
     def __init__(self, pluginref, *args, **kwargs):
         self._add_defaultsetter(kwargs,
           'only_value', DefaultSetterConstant(False)
+        )
+
+        self._add_defaultsetter(kwargs,
+          'return_secrets', DefaultSetterConstant(False)
+        )
+
+        self._add_defaultsetter(kwargs,
+          'read_all', DefaultSetterConstant(False)
         )
 
         super(NormSecretGetInst, self).__init__(pluginref, *args, **kwargs)
@@ -96,6 +136,15 @@ class NormSecretGetInst(NormalizerNamed):
         ## remove unused attributes imported from common get/set defaults
         tmp.pop('tags', None)
 
+        ## handle read-all meta/reference keys
+        if my_subcfg['name'].upper() == self.MAGIC_READALL_KEY:
+            my_subcfg['read_all'] = True
+
+        if my_subcfg['read_all']:
+            ## azure module will read/return all secrets if
+            ## no name is specified
+            my_subcfg['config'].pop('name')
+
         return my_subcfg
 
 
@@ -109,21 +158,12 @@ class NormSetAllSecrets(NormalizerBase):
 
         super(NormSetAllSecrets, self).__init__(pluginref, *args, **kwargs)
 
-
     @property
     def config_path(self):
         return ['set_secrets', 'secrets']
 
 
 class NormSecretSetInst(NormalizerNamed):
-
-    def __init__(self, pluginref, *args, **kwargs):
-        ##self._add_defaultsetter(kwargs,
-        ##  'only_value', DefaultSetterConstant(False)
-        ##)
-
-        super(NormSecretSetInst, self).__init__(pluginref, *args, **kwargs)
-
 
     @property
     def config_path(self):
@@ -155,7 +195,10 @@ class ActionModule(ConfigNormalizerBaseMerger):
     def __init__(self, *args, **kwargs):
         super(ActionModule, self).__init__(
            AZSecretsNormalizer(self), *args,
-##           default_merge_vars=['smabot_az_secrets_args_defaults'],
+           default_merge_vars=[
+             'smabot_azure_keyvault_secrets_args_defaults',
+             'smabot_azure_keyvault_secrets_args_extra_defaults'
+           ],
            **kwargs
         )
 
