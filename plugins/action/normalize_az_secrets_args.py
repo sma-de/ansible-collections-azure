@@ -61,6 +61,18 @@ class AZSecretsNormalizer(NormalizerBase):
 class NormGetSecrets(NormalizerBase):
 
     def __init__(self, pluginref, *args, **kwargs):
+        self._add_defaultsetter(kwargs,
+          'all', DefaultSetterConstant(False)
+        )
+
+        self._add_defaultsetter(kwargs,
+          'matching', DefaultSetterConstant(None)
+        )
+
+        self._add_defaultsetter(kwargs,
+          'return_list', DefaultSetterConstant(False)
+        )
+
         subnorms = kwargs.setdefault('sub_normalizers', [])
         subnorms += [
           NormGetAllSecrets(pluginref),
@@ -74,16 +86,26 @@ class NormGetSecrets(NormalizerBase):
         return ['get_secrets']
 
     def _handle_specifics_postsub(self, cfg, my_subcfg, cfgpath_abs):
-        readall = my_subcfg.get('all', None)
+        matching = my_subcfg['matching']
+
+        if matching:
+            my_subcfg['all'] = True
+
+        readall = my_subcfg['all']
 
         if readall:
             tmp = my_subcfg['secrets']
-            ansible_assert(not tmp,
+            t2 = setdefault_none(tmp, NormSecretGetInst.MAGIC_READALL_KEY, None)
+
+            ansible_assert(len(tmp) == 1,
                "Either explicitly list some secrets by name, or use"\
-               " the all key to read all secrets, never combine these two"
+               " the 'all' / 'matching' key to read all secrets, never combine these two"
             )
 
-            tmp['___all___'] = readall
+            if t2 is None:
+                t2 = readall
+
+            tmp[NormSecretGetInst.MAGIC_READALL_KEY] = t2
 
         return my_subcfg
 

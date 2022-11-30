@@ -9,6 +9,7 @@ ANSIBLE_METADATA = {
 
 import collections
 import copy
+import re
 
 from ansible.errors import AnsibleFilterError, AnsibleOptionsError
 from ansible.module_utils.six import string_types
@@ -38,6 +39,7 @@ class AppendAZSecrets(FilterBase):
         tmp.update({
           'new_secrets': ([[collections.abc.Mapping]]),
           'secrets_cfg': ([collections.abc.Mapping]),
+          'base_cfg': ([collections.abc.Mapping]),
         })
 
         return tmp
@@ -49,6 +51,9 @@ class AppendAZSecrets(FilterBase):
                "input value must be a mapping, but is of"\
                " type '{}'".format(type(value))
             )
+
+        base_cfg = self.get_taskparam('base_cfg')
+        match_rgx = base_cfg['matching']
 
         new_secrets = self.get_taskparam('new_secrets')
         secrets_cfg = self.get_taskparam('secrets_cfg')
@@ -64,6 +69,11 @@ class AppendAZSecrets(FilterBase):
                 sname = sname[-1]
             else:
                 sname = sname[-2]
+
+            if match_rgx:
+                if not re.search(match_rgx, sname):
+                    # secret name does not match given pattern, so ignore it
+                    continue
 
             ns['name'] = sname
 
