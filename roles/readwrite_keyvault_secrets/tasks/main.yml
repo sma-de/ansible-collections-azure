@@ -37,7 +37,7 @@
   - set_fact:
       smabot_az_secrets_args_normed: "{{ _tmp_az_secrets_config.normalized }}"
       _tmp_my_tasks_file: "{{ role_path }}/tasks/venv_tasks.yml"
-    no_log: true
+    no_log: "{{ _tmp_az_secrets_config.normalized.hide_secrets }}"
 
 
   - ansible.builtin.include_role:
