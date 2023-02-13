@@ -142,6 +142,10 @@ class NormSecretGetInst(NormalizerNamed):
           'read_all', DefaultSetterConstant(False)
         )
 
+        self._add_defaultsetter(kwargs,
+          'optional', DefaultSetterConstant(False)
+        )
+
         super(NormSecretGetInst, self).__init__(pluginref, *args, **kwargs)
 
 

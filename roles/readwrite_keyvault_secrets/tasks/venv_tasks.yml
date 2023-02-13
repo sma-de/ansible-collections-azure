@@ -46,7 +46,7 @@
     set_fact:
       smabot_azure_read_secrets: >-
         {{ smabot_azure_read_secrets | combine({'secrets': (
-             smabot_azure_read_secrets.secrets | dict2items
+             smabot_azure_read_secrets.secrets | default({}) | dict2items
              | map(attribute='value') | list), })
         }}
     when: smabot_az_secrets_args_normed.get_secrets.return_list
