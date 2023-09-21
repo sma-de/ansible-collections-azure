@@ -34,7 +34,7 @@
     register: _tmp_az_secrets_config
     no_log: >-
       {{ (smabot_azure_keyvault_secrets_args.normalized.hide_secrets
-       | default(True) ) == False }}
+       | default(True) ) != False }}
 
   - set_fact:
       smabot_az_secrets_args_normed: "{{ _tmp_az_secrets_config.normalized }}"
