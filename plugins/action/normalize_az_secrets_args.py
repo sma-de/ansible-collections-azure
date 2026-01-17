@@ -30,6 +30,10 @@ class AZSecretsNormalizer(NormalizerBase):
         )
 
         self._add_defaultsetter(kwargs,
+          'venv', DefaultSetterConstant(True)
+        )
+
+        self._add_defaultsetter(kwargs,
           'requirements_srcpath', DefaultSetterConstant(
               'ansible_collections/azure/azcollection/requirements-azure.txt'
           )

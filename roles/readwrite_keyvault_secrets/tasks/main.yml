@@ -38,15 +38,29 @@
 
   - set_fact:
       smabot_az_secrets_args_normed: "{{ _tmp_az_secrets_config.normalized }}"
-      _tmp_my_tasks_file: "{{ role_path }}/tasks/venv_tasks.yml"
+      smabot_az_secrets_tmp_my_tasks_file: "{{ role_path }}/tasks/venv_tasks.yml"
+      smabot_az_secrets_inside_other_venv: >-
+        {{ (SMABOT_BASE_CURVENV_PATH | default(False)) is truthy }}
     no_log: "{{ _tmp_az_secrets_config.normalized.hide_secrets }}"
 
 
+    ## option A (default): make new venv to run this role code inside
   - ansible.builtin.include_role:
       name: smabot.base.run_inside_venv
     vars:
       smabot_base_run_inside_venv_cfg:
-        tasks: "{{ _tmp_my_tasks_file }}"
+        tasks: "{{ smabot_az_secrets_tmp_my_tasks_file }}"
+    when: >-
+      smabot_az_secrets_args_normed.venv is truthy
+      and not smabot_az_secrets_inside_other_venv
+
+
+    ## option B: run role without (new) venv
+  - ansible.builtin.include_tasks: >-
+      {{ smabot_az_secrets_tmp_my_tasks_file }}
+    when: >-
+      smabot_az_secrets_args_normed.venv is falsy
+      or smabot_az_secrets_inside_other_venv
 
 ##  - debug:
 ##      var: smabot_azure_read_secrets
