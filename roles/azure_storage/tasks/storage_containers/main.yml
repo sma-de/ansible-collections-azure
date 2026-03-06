@@ -1,0 +1,6 @@
+---
+
+- name: handle storage container '{{ _iter_az_store_con.key }}'
+  azure.azcollection.azure_rm_storageblob: >-
+    {{ _iter_az_store_con.value.config }}
+

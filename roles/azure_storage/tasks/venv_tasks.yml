@@ -1,0 +1,31 @@
+---
+
+################### <assure py env is prepared> ######################
+
+  - ansible.builtin.include_role:
+      name: smabot.azure.prepare_azure_pip
+    vars:
+      smabot_azure_prepare_azure_pip_args:
+        requirements_srcpath: >-
+          {{ smabot_az_storage_args_normed.requirements_srcpath }}
+
+
+################### <handling storage accounts> ######################
+
+  - ansible.builtin.include_tasks: storage_accounts/main.yml
+    loop: >-
+      {{ smabot_az_storage_args_normed.storage_accounts.accounts
+       | dict2items }}
+    loop_control:
+      loop_var: _iter_az_store_acc
+
+
+################### <handling storage containers> ######################
+
+  - ansible.builtin.include_tasks: storage_containers/main.yml
+    loop: >-
+      {{ smabot_az_storage_args_normed.storage_containers.containers
+       | dict2items }}
+    loop_control:
+      loop_var: _iter_az_store_con
+

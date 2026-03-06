@@ -1,0 +1,11 @@
+---
+
+  - name: handle azure storage account res group for '{{ _iter_az_store_acc.key }}'
+    azure.azcollection.azure_rm_resourcegroup: >-
+      {{ _iter_az_store_acc.value.resgrp.config }}
+
+
+  - name: handle azure storage account '{{ _iter_az_store_acc.key }}'
+    azure.azcollection.azure_rm_storageaccount: >-
+      {{ _iter_az_store_acc.value.config }}
+

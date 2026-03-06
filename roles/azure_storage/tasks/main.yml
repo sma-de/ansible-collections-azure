@@ -1,0 +1,29 @@
+---
+
+  - include_role:
+      name: smabot.base.expand_vardirs
+    when: >-
+      not (smabot_azure_azure_storage_args.skip_vardir_expand
+      | default(False) )
+
+
+  - smabot.azure.normalize_az_storage_args:
+    register: _tmp_az_normed_cfg
+
+    ## ATM: config does never contain any secrets so far
+    ##no_log: >-
+    ##  {{ (smabot_azure_azure_storage_args.hide_secrets
+    ##   | default(True) ) != False }}
+
+  - set_fact:
+      smabot_az_storage_args_normed: "{{ _tmp_az_normed_cfg.normalized }}"
+      _tmp_my_tasks_file: "{{ role_path }}/tasks/venv_tasks.yml"
+    ##no_log: "{{ _tmp_az_normed_cfg.normalized.hide_secrets }}"
+
+
+  - ansible.builtin.include_role:
+      name: smabot.base.run_inside_venv
+    vars:
+      smabot_base_run_inside_venv_cfg:
+        tasks: "{{ _tmp_my_tasks_file }}"
+

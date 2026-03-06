@@ -2,33 +2,12 @@
 
 ################### <assure py env is prepared> ######################
 
-  - name: create local temp file for requirements file
-    ansible.builtin.tempfile:
-      state: file
-    register: _tmp_tmpfile
-    changed_when: false
-
-
-    ## use the correct version reqfile installed together with collection,
-    ## this seems to be more stable than simply always using latest
-    ## version from repo
-  - name: move requirements file to target
-    ansible.builtin.copy:
-      src: "{{ smabot_az_secrets_args_normed.requirements_srcpath }}"
-      dest: "{{ _tmp_tmpfile.path }}"
-    changed_when: false
-
-
-  - name: install necessary python packages
-    ansible.builtin.pip:
-      requirements: "{{ _tmp_tmpfile.path }}"
-
-
-  - name: remove local requirements temp file
-    ansible.builtin.file:
-      path: "{{ _tmp_tmpfile.path }}"
-      state: absent
-    changed_when: false
+  - ansible.builtin.include_role:
+      name: smabot.azure.prepare_azure_pip
+    vars:
+      smabot_azure_prepare_azure_pip_args:
+        requirements_srcpath: >-
+          {{ smabot_az_secrets_args_normed.requirements_srcpath }}
 
 
 ################### <actually reading secrets> ######################
