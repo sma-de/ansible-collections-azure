@@ -16,9 +16,11 @@
       smabot_azure_read_secrets: {}
 
   - ansible.builtin.include_tasks: read_secrets.yml
-    loop: "{{ smabot_az_secrets_args_normed.get_secrets.secrets | dict2items }}"
+    loop: >-
+      {{ smabot_az_secrets_args_normed.get_secrets.secrets | dict2items }}
     loop_control:
       loop_var: _iter_az_secrets
+      label: "{{ _iter_az_secrets.key }}"
 
 
   - name: return read secrets as flat value list as requested
@@ -35,7 +37,9 @@
 ################### <writing secrets> #######################
 
   - ansible.builtin.include_tasks: write_secret.yml
-    loop: "{{ smabot_az_secrets_args_normed.set_secrets.secrets | dict2items }}"
+    loop: >-
+      {{ smabot_az_secrets_args_normed.set_secrets.secrets | dict2items }}
     loop_control:
       loop_var: _iter_az_secrets
+      label: "{{ _iter_az_secrets.key }}"
 
