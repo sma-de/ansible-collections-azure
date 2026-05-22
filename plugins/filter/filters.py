@@ -65,7 +65,7 @@ class AppendAZSecrets(FilterBase):
             # is surprisingly complicated (no direct field for this)
             sname = ns['sid'].split('/')
 
-            if read_all:
+            if sname[-2] == 'secrets':
                 sname = sname[-1]
             else:
                 sname = sname[-2]
